@@ -18,7 +18,7 @@ api_key: 76ea20e2bc5204478f1493d7393afe7f
 ## Set to 'us5.datadoghq.com' to send data to the US5 site.
 ## Set to 'ddog-gov.com' to send data to the US1-FED site.
 #
-site: datadoghq.com
+site: datadoghq.de
 
 ## @param dd_url - string - optional - default: https://app.datadoghq.com
 ## @env DD_URL - string - optional - default: https://app.datadoghq.com
@@ -27,7 +27,7 @@ site: datadoghq.com
 ## setting defined in "site". It does not affect APM, Logs or Live Process intake which have their
 ## own "*_dd_url" settings.
 #
-# dd_url: https://app.datadoghq.com
+# dd_url: https://app.datadoghq.de
 
 ## @param proxy - custom object - optional
 ## @env DD_PROXY_HTTP - string - optional
