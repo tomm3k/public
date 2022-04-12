@@ -27,7 +27,7 @@ site: datadoghq.de
 ## setting defined in "site". It does not affect APM, Logs or Live Process intake which have their
 ## own "*_dd_url" settings.
 #
-# dd_url: https://app.datadoghq.de
+# dd_url: https://app.datadoghq.com
 
 ## @param proxy - custom object - optional
 ## @env DD_PROXY_HTTP - string - optional
