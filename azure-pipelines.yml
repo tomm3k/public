@@ -1,0 +1,163 @@
+pool: avd-image-pipe1
+
+trigger: none
+parameters: 
+  - name: azSubscription
+    type: string
+    default: "SUB NAME"
+  - name: azSubscriptionID
+    type: string
+    default: "xxxxxxxxxxxxxxxxxxxxxx"
+  - name: resourceGroup
+    type: string
+    default: "XXXXXXXX"
+  - name: VMName
+    type: string
+    default: "avdmaster"
+  - name: ComputeGalleryName
+    type: string
+    default: "AVDGallery"
+  - name: ImageName
+    type: string
+    default: "AVDHosts"
+  - name: ServiceConnection
+    type: string
+    default: "XXXXXX"
+    
+stages:
+
+  # - stage: chocoupgrade
+  #   displayName: chocoupgrade
+  #   #dependsOn: prepareenvironment
+  #   jobs:
+  #     - job: chocoupgrade
+  #       displayName: chocoupgrade
+  #       steps:
+  #           - powershell: |
+  #               [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  #               Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+  #               Install-Module -Name Az.Compute -Scope CurrentUser -Repository PSGallery -Force
+  #               Import-module az.compute -Verbose
+  #               Get-InstalledModule -Name Az.* | Select-Object *
+  #             displayName: "install AZ cli"
+  #           - task: AzurePowerShell@5
+  #             displayName: "Run Remote"
+  #             inputs:
+  #              azureSubscription: ${{ parameters.ServiceConnection }}
+  #              ScriptPath: runremote-choco.ps1 
+  #              ScriptArguments: "choco-app-upgrade.ps1 ${{ parameters.resourceGroup }} ${{ parameters.VMName }}"
+  #              azurePowerShellVersion: LatestVersion
+
+  - stage: prepareenvironment
+    displayName: Take snaphot of one avdhost or mastervm
+    jobs:
+      - job: prepareenvironment
+        displayName: prepareenvironment
+        steps:
+            - powershell: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+                Install-Module -Name Az.Compute -Scope CurrentUser -Repository PSGallery -Force
+                Install-Module -Name Az.Resources -Scope CurrentUser -Repository PSGallery -Force
+                Install-Module -Name Az.Network -Scope CurrentUser -Repository PSGallery -Force
+                Install-Module -Name Az.Storage -Scope CurrentUser -Repository PSGallery -Force
+                Install-Module AzureVMSnapshots -Scope CurrentUser -Repository PSGallery -Force
+                Import-module az.Compute -Verbose
+                Import-module az.Storage -Verbose
+                Import-module az.Resources -Verbose
+                Import-module AzureVMSnapshots -Verbose
+                Import-module Az.network -Verbose
+                Get-InstalledModule -Name Az.* | Select-Object *
+              displayName: "install AZ cli"
+            - task: AzurePowerShell@5
+              displayName: "Create Ressources and Snapshot"
+              inputs:
+               azureSubscription: ${{ parameters.ServiceConnection }}
+               ScriptPath: snapshot.ps1
+               ScriptArguments: '"${{ parameters.azSubscription }}" "${{ parameters.resourceGroup }}" "${{ parameters.VMName }}"'
+               azurePowerShellVersion: LatestVersion
+
+  - stage: deinstall
+    displayName: deinstall avd agent
+    #dependsOn: prepareenvironment
+    jobs:
+      - job: deinstall
+        displayName: deinstall
+        steps:
+            - powershell: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+                Install-Module -Name Az.Compute -Scope CurrentUser -Repository PSGallery -Force
+                Import-module az.compute -Verbose
+                Get-InstalledModule -Name Az.* | Select-Object *
+              displayName: "install AZ cli"
+            - task: AzurePowerShell@5
+              displayName: "Run Remote"
+              inputs:
+               azureSubscription: ${{ parameters.ServiceConnection }}
+               ScriptPath: runremote.ps1 
+               ScriptArguments: "deinstall.ps1 ${{ parameters.resourceGroup }} ${{ parameters.VMName }}"
+               azurePowerShellVersion: LatestVersion
+
+  - stage: sysprep
+    displayName: sysprep
+    #dependsOn: prepareenvironment
+    jobs:
+      - job: sysprep
+        displayName: sysprep
+        steps:
+            - powershell: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+                Install-Module -Name Az.Compute -Scope CurrentUser -Repository PSGallery -Force
+                Import-module az.compute -Verbose
+                Get-InstalledModule -Name Az.* | Select-Object *
+              displayName: "install AZ cli"
+            - task: AzurePowerShell@5
+              displayName: "Run Remote"
+              inputs:
+               azureSubscription: ${{ parameters.ServiceConnection }}
+               ScriptPath: sysprep.ps1 
+               ScriptArguments: '"${{ parameters.azSubscription }}" "${{ parameters.resourceGroup }}" "${{ parameters.VMName }}" "${{ parameters.ComputeGalleryName }}" "${{ parameters.ImageName }}"'
+               azurePowerShellVersion: LatestVersion
+
+  - stage: delete
+    displayName: delete resources
+    jobs:
+      - job: delete
+        displayName: delete
+        steps:
+            - powershell: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+                Install-Module -Name Az.Resources -Scope CurrentUser -Repository PSGallery -Force
+                Import-module Az.Resources -Verbose
+                Get-InstalledModule -Name Az.* | Select-Object *
+              displayName: "install AZ cli"
+            - task: AzurePowerShell@5
+              displayName: "Delete"
+              inputs:
+               azureSubscription: ${{ parameters.ServiceConnection }}
+               ScriptPath: delete.ps1
+               ScriptArguments: '"${{ parameters.azSubscription }}"'
+               azurePowerShellVersion: LatestVersion
+  - stage: hostpool
+    displayName: add hosts to hostpool
+    jobs:
+      - job: hostpool
+        displayName: hostpool
+        steps:
+            - powershell: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+                Install-Module -Name Az.Resources -Scope CurrentUser -Repository PSGallery -Force
+                Import-module Az.Resources -Verbose
+                Get-InstalledModule -Name Az.* | Select-Object *
+              displayName: "install AZ cli"
+            - task: AzurePowerShell@5
+              displayName: "Delete"
+              inputs:
+               azureSubscription: ${{ parameters.ServiceConnection }}
+               ScriptPath: hostpool.ps1
+               ScriptArguments: '"${{ parameters.azSubscription }}"'
+               azurePowerShellVersion: LatestVersion
